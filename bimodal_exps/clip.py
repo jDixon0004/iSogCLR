@@ -450,17 +450,6 @@ def main(args):
         model.load_state_dict(state_dict, strict=False)  
         print('load checkpoint from %s' % args.checkpoint)'''
 
-    # new: reload from checkpoint for all models
-    if args.evaluate or args.ita_type == 'isogclr_denoise':
-        assert len(args.checkpoint) > 0
-    if len(args.checkpoint) > 0:
-        checkpoint = torch.load(args.checkpoint, map_location='cpu') 
-        state_dict = checkpoint['model']             
-        model.load_state_dict(state_dict, strict=False)  
-        checkpoint_num = int(re.findall(r'\d+', args.checkpoint)[-1])
-        start_epoch = checkpoint_num + 1
-        print(f'load checkpoint #{checkpoint_num} from {args.checkpoint}')
-
     if args.check_samples_tau:
         image_tau_array = []
         text_tau_array = []
@@ -507,6 +496,21 @@ def main(args):
     warmup_steps = args.warmup_epochs
     best = 0
     best_epoch = 0
+
+    # new: reload from checkpoint for all models
+    if len(args.checkpoint) > 0:
+        checkpoint = torch.load(args.checkpoint, map_location='cpu')              
+        model.load_state_dict(checkpoint['model'], strict=False)  
+
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+
+        start_epoch = checkpoint['epoch'] + 1  # Resume from the next epoch
+        best_loss = checkpoint['best_loss']
+        lr_scheduler.load_state_dict(checkpoint['lr_scheduler_state_dict'])
+        
+        checkpoint_num = int(re.findall(r'\d+', args.checkpoint)[-1])
+        start_epoch = checkpoint_num + 1
+        print(f'load checkpoint #{checkpoint_num} from {args.checkpoint}')
 
     print("Start training")
     start_time = time.time()    
