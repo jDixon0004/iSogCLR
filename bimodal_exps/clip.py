@@ -505,11 +505,10 @@ def main(args):
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
         start_epoch = checkpoint['epoch'] + 1  # Resume from the next epoch
-        best_loss = checkpoint['best_loss']
+        best_epoch = checkpoint['best_epoch']
+        #args = checkpoint['args']
         lr_scheduler.load_state_dict(checkpoint['lr_scheduler_state_dict'])
         
-        checkpoint_num = int(re.findall(r'\d+', args.checkpoint)[-1])
-        start_epoch = checkpoint_num + 1
         print(f'load checkpoint #{checkpoint_num} from {args.checkpoint}')
 
     print("Start training")
@@ -600,7 +599,11 @@ def main(args):
                 #     best_epoch = epoch
 
                 save_obj = {
-                    'model': model_without_ddp.state_dict()
+                    'model': model_without_ddp.state_dict(),
+                    'optimizer': optimizer.state_dict(),
+                    'lr_scheduler': lr_scheduler.state_dict(),
+                    'args': args,
+                    'epoch': epoch,
                 }
                 torch.save(save_obj, os.path.join(args.output_dir, 'checkpoint_'+str(epoch+1)+'.pth'))
                     
