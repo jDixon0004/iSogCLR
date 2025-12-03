@@ -11,6 +11,7 @@ os.environ["TOKENIZERS_PARALLELISM"] = "true"
 
 import numpy as np
 import random
+import re
 import time
 import datetime
 import json
@@ -439,12 +440,26 @@ def main(args):
                   use_temp_net=args.isogclr_temp_net, alpha=args.alpha, distributed=args.distributed)
     model = model.to(device)
 
-    if args.evaluate or args.ita_type == 'isogclr_denoise':
+    start_epoch = 0
+
+    # old
+    '''if args.evaluate or args.ita_type == 'isogclr_denoise':
         assert len(args.checkpoint) > 0
         checkpoint = torch.load(args.checkpoint, map_location='cpu') 
         state_dict = checkpoint['model']             
         model.load_state_dict(state_dict, strict=False)  
-        print('load checkpoint from %s' % args.checkpoint)
+        print('load checkpoint from %s' % args.checkpoint)'''
+
+    # new: reload from checkpoint for all models
+    if args.evaluate or args.ita_type == 'isogclr_denoise':
+        assert len(args.checkpoint) > 0
+    if len(args.checkpoint) > 0:
+        checkpoint = torch.load(args.checkpoint, map_location='cpu') 
+        state_dict = checkpoint['model']             
+        model.load_state_dict(state_dict, strict=False)  
+        checkpoint_num = re.findall(r'\d+', text)[0]
+        start_epoch = checkpoint_num + 1
+        print(f'load checkpoint #{checkpoint_num} from {args.checkpoint}')
 
     if args.check_samples_tau:
         image_tau_array = []
@@ -495,7 +510,7 @@ def main(args):
 
     print("Start training")
     start_time = time.time()    
-    for epoch in range(0, max_epoch):
+    for epoch in range(start_epoch, max_epoch):
         if not args.evaluate:
             if args.distributed:
                 train_loader.sampler.set_epoch(epoch)
