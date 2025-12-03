@@ -498,18 +498,19 @@ def main(args):
     best_epoch = 0
 
     # new: reload from checkpoint for all models
+    torch.serialization.add_safe_globals([argparse.Namespace])
     if len(args.checkpoint) > 0:
         checkpoint = torch.load(args.checkpoint, map_location='cpu')              
         model.load_state_dict(checkpoint['model'], strict=False)  
 
-        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer'])
 
         start_epoch = checkpoint['epoch'] + 1  # Resume from the next epoch
         best_epoch = checkpoint['best_epoch']
         #args = checkpoint['args']
-        lr_scheduler.load_state_dict(checkpoint['lr_scheduler_state_dict'])
+        lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
         
-        print(f'load checkpoint #{checkpoint_num} from {args.checkpoint}')
+        print(f'load checkpoint #{checkpoint['epoch']} from {args.checkpoint}')
 
     print("Start training")
     start_time = time.time()    
@@ -604,6 +605,7 @@ def main(args):
                     'lr_scheduler': lr_scheduler.state_dict(),
                     'args': args,
                     'epoch': epoch,
+                    'best_epoch': best_epoch
                 }
                 torch.save(save_obj, os.path.join(args.output_dir, 'checkpoint_'+str(epoch+1)+'.pth'))
                     
