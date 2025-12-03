@@ -442,6 +442,9 @@ def main(args):
 
     start_epoch = 0
 
+    optimizer = create_optimizer(args, model)
+    lr_scheduler, _ = create_scheduler(args, optimizer)
+
     # old
     '''if args.evaluate or args.ita_type == 'isogclr_denoise':
         assert len(args.checkpoint) > 0
@@ -493,10 +496,6 @@ def main(args):
 
         assert 0
 
-    if 'optimizer' not in locals():
-        optimizer = create_optimizer(args, model)
-    if 'lr_scheduler' not in locals():
-        lr_scheduler, _ = create_scheduler(args, optimizer)
     if args.distributed:
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
         model_without_ddp = model.module
