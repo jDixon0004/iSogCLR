@@ -359,6 +359,10 @@ class VICReg_Loss(nn.Module):
             x = torch.cat(GatherLayer.apply(image_features), dim=0)
             y = torch.cat(GatherLayer.apply(text_features), dim=0)
 
+        else:
+            x = image_features
+            y = text_features
+
         batch_size = len(x)
 
         repr_loss = F.mse_loss(x, y) # invariance term
