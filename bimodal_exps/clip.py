@@ -449,6 +449,20 @@ def main(args):
         state_dict = checkpoint['model']             
         model.load_state_dict(state_dict, strict=False)  
         print('load checkpoint from %s' % args.checkpoint)'''
+    # new: reload from checkpoint for all models
+    torch.serialization.add_safe_globals([argparse.Namespace])
+    if len(args.checkpoint) > 0:
+        checkpoint = torch.load(args.checkpoint, map_location='cpu')              
+        model.load_state_dict(checkpoint['model'], strict=False)  
+
+        optimizer.load_state_dict(checkpoint['optimizer'])
+
+        start_epoch = checkpoint['epoch'] + 1  # Resume from the next epoch
+        best_epoch = checkpoint['best_epoch']
+        #args = checkpoint['args']
+        lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
+        
+        print(f'load checkpoint #{checkpoint['epoch']} from {args.checkpoint}')
 
     if args.check_samples_tau:
         image_tau_array = []
@@ -479,8 +493,10 @@ def main(args):
 
         assert 0
 
-    optimizer = create_optimizer(args, model)
-    lr_scheduler, _ = create_scheduler(args, optimizer)
+    if 'optimizer' not in locals():
+        optimizer = create_optimizer(args, model)
+    if 'lr_scheduler' not in locals():
+        lr_scheduler, _ = create_scheduler(args, optimizer)
     if args.distributed:
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
         model_without_ddp = model.module
@@ -496,21 +512,6 @@ def main(args):
     warmup_steps = args.warmup_epochs
     best = 0
     best_epoch = 0
-
-    # new: reload from checkpoint for all models
-    torch.serialization.add_safe_globals([argparse.Namespace])
-    if len(args.checkpoint) > 0:
-        checkpoint = torch.load(args.checkpoint, map_location='cpu')              
-        model.load_state_dict(checkpoint['model'], strict=False)  
-
-        optimizer.load_state_dict(checkpoint['optimizer'])
-
-        start_epoch = checkpoint['epoch'] + 1  # Resume from the next epoch
-        best_epoch = checkpoint['best_epoch']
-        #args = checkpoint['args']
-        lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
-        
-        print(f'load checkpoint #{checkpoint['epoch']} from {args.checkpoint}')
 
     print("Start training")
     start_time = time.time()    
