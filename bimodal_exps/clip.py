@@ -457,7 +457,7 @@ def main(args):
         checkpoint = torch.load(args.checkpoint, map_location='cpu') 
         state_dict = checkpoint['model']             
         model.load_state_dict(state_dict, strict=False)  
-        checkpoint_num = re.findall(r'\d+', args.checkpoint)[0]
+        checkpoint_num = int(re.findall(r'\d+', args.checkpoint)[0])
         start_epoch = checkpoint_num + 1
         print(f'load checkpoint #{checkpoint_num} from {args.checkpoint}')
 
