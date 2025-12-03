@@ -511,6 +511,8 @@ def main(args):
     warmup_steps = args.warmup_epochs
     best = 0
     best_epoch = 0
+    if args.evaluate:
+        start_epoch = 0
 
     print("Start training")
     start_time = time.time()    
